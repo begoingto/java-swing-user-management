@@ -17,11 +17,18 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.DefaultTableModel;
 import app.repositories.UserRepoitory;
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
+import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import java.awt.Button;
+import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JFrame;
 import javax.swing.tree.DefaultMutableTreeNode;
 import raven.toast.Notifications;
 
@@ -36,6 +43,7 @@ public class AppForm extends javax.swing.JFrame {
     private Integer totalUser = 0;
     User user;
     private Integer userIndex;
+    private Boolean isDarkTheme = true;
 
     /**
      * Creates new form AppForm
@@ -45,6 +53,7 @@ public class AppForm extends javax.swing.JFrame {
         this.user = new User();
         this.setLocationRelativeTo(null);
 //        this.setResizable(false);
+        this.setExtendedState(JFrame.MAXIMIZED_BOTH); // set full screen
         cbRole.setSelectedIndex(1);
         String[] columnNames = {"ID", "Username", "Full Name", "Gender", "Password", "Role", "Is Active"};
         tblUserModel = new DefaultTableModel(columnNames, 0);
@@ -99,6 +108,7 @@ public class AppForm extends javax.swing.JFrame {
         mExport = new javax.swing.JMenu();
         mImport = new javax.swing.JMenu();
         mUserPermission = new javax.swing.JMenu();
+        mTheme = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -311,6 +321,23 @@ public class AppForm extends javax.swing.JFrame {
         });
         jMenuBar1.add(mUserPermission);
 
+        mTheme.setText("Theme");
+        mTheme.addMenuListener(new javax.swing.event.MenuListener() {
+            public void menuCanceled(javax.swing.event.MenuEvent evt) {
+            }
+            public void menuDeselected(javax.swing.event.MenuEvent evt) {
+            }
+            public void menuSelected(javax.swing.event.MenuEvent evt) {
+                mThemeMenuSelected(evt);
+            }
+        });
+        mTheme.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                mThemeMouseClicked(evt);
+            }
+        });
+        jMenuBar1.add(mTheme);
+
         setJMenuBar(jMenuBar1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -455,10 +482,6 @@ public class AppForm extends javax.swing.JFrame {
 
     private void mResetMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_mResetMousePressed
         // TODO add your handling code here:
-        mAdd.setEnabled(true);
-        mUpdate.setEnabled(false);
-        mDelete.setEnabled(false);
-        mUserPermission.setEnabled(false);
         this.clearForm();
     }//GEN-LAST:event_mResetMousePressed
 
@@ -515,12 +538,39 @@ public class AppForm extends javax.swing.JFrame {
             } catch (SQLException ex) {
                 Notifications.getInstance().show(Notifications.Type.ERROR, Notifications.Location.TOP_CENTER, ex.getMessage());
                 Logger.getLogger(AppForm.class.getName()).log(Level.SEVERE, null, ex);
-            }finally {
+            } finally {
                 p.setAutCommitTrue();
                 p.closeConnection();
             }
         }
     }//GEN-LAST:event_mUserPermissionMouseClicked
+
+    private void mThemeMenuSelected(javax.swing.event.MenuEvent evt) {//GEN-FIRST:event_mThemeMenuSelected
+        // TODO add your handling code here:
+
+    }//GEN-LAST:event_mThemeMenuSelected
+
+    private void mThemeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_mThemeMouseClicked
+        // TODO add your handling code here:
+        isDarkTheme = !isDarkTheme;
+        System.out.println("Theme mThemeMouseClicked: " + isDarkTheme);
+        if (isDarkTheme) {
+            EventQueue.invokeLater(() -> {
+                FlatAnimatedLafChange.showSnapshot();
+                FlatMacDarkLaf.setup();
+                FlatLaf.updateUI();
+                FlatAnimatedLafChange.hideSnapshotWithAnimation();
+            });
+        } else {
+            EventQueue.invokeLater(() -> {
+                FlatAnimatedLafChange.showSnapshot();
+                FlatMacLightLaf.setup();
+                FlatLaf.updateUI();
+                FlatAnimatedLafChange.hideSnapshotWithAnimation();
+            });
+        }
+
+    }//GEN-LAST:event_mThemeMouseClicked
 
     private boolean usernameValid() {
         String regex = "^[A-Za-z][A-Za-z0-9_]{5,29}$";
@@ -539,6 +589,10 @@ public class AppForm extends javax.swing.JFrame {
         this.txtFullName.setText("");
         this.txtPassword.setText("");
         this.txtConfirmPassword.setText(null);
+        mAdd.setEnabled(true);
+        mUpdate.setEnabled(false);
+        mDelete.setEnabled(false);
+        mUserPermission.setEnabled(false);
     }
 
     private void initTableData() {
@@ -613,6 +667,7 @@ public class AppForm extends javax.swing.JFrame {
     private javax.swing.JMenu mImport;
     private javax.swing.JMenuItem mReset;
     private javax.swing.JMenu mSearch;
+    private javax.swing.JMenu mTheme;
     private javax.swing.JMenu mUpdate;
     private javax.swing.JMenu mUserPermission;
     private javax.swing.JTable tblUser;
