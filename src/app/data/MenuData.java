@@ -59,23 +59,6 @@ public class MenuData {
         return data;
     }
 
-    public static Boolean onUpdatedPermission(UpdatedPermissionEnum statusDailog) throws SQLException {
-        Connection conn = ConnectionDB.getConnection();
-        switch (statusDailog) {
-            case OK:
-                conn.commit();
-                break;
-            case CANCEL:
-                conn.rollback();
-                break;
-            case AUTO_COMMIT:
-                conn.setAutoCommit(true);
-                break;
-            default:
-                conn.setAutoCommit(false);
-        }
-        return true;
-    }
 
     @AllArgsConstructor
     public class UpdatingPermission {
@@ -119,6 +102,22 @@ public class MenuData {
             onUpsertPermission(user.getId(), menuId, checked);
         }
 
+        private void onUpsertPermission(int userId, int menuId, Boolean checked) {
+            String sql = "SELECT upsert_user_menu(?, ?, ?);";
+            try {
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                pstmt.setInt(1, userId);
+                pstmt.setInt(2, menuId);
+                pstmt.setBoolean(3, checked);
+                ResultSet rs = pstmt.executeQuery();
+                Notifications.getInstance().show(Notifications.Type.SUCCESS, Notifications.Location.TOP_CENTER, "Updated permission");
+            } catch (SQLException ex) {
+                Notifications.getInstance().show(Notifications.Type.ERROR, Notifications.Location.TOP_CENTER, 5000, ex.getMessage());
+                Logger.getLogger(MenuData.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+        
         private Boolean existedPermission(int userId, int menuId) {
             String sql = "SELECT COUNT(*) FROM " + tableName + " WHERE customer_id = ? AND menu_id=?;";
             try {
@@ -134,21 +133,6 @@ public class MenuData {
                 Logger.getLogger(MenuData.class.getName()).log(Level.SEVERE, null, ex);
             }
             return false;
-        }
-
-        private void onUpsertPermission(int userId, int menuId, Boolean checked) {
-            String sql = "SELECT upsert_user_menu(?, ?, ?);";
-            try {
-                PreparedStatement pstmt = conn.prepareStatement(sql);
-                pstmt.setInt(1, userId);
-                pstmt.setInt(2, menuId);
-                pstmt.setBoolean(3, checked);
-                ResultSet rs = pstmt.executeQuery();
-                Notifications.getInstance().show(Notifications.Type.SUCCESS, Notifications.Location.TOP_CENTER, "Updated permission");
-            } catch (SQLException ex) {
-                Notifications.getInstance().show(Notifications.Type.ERROR, Notifications.Location.TOP_CENTER, 5000, ex.getMessage());
-                Logger.getLogger(MenuData.class.getName()).log(Level.SEVERE, null, ex);
-            }
         }
 
         private void onUpdateMenuIdValue(int userId, int menuId, Boolean checked) {
