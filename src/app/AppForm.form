@@ -2,6 +2,8 @@
 
 <Form version="1.5" maxVersion="1.9" type="org.netbeans.modules.form.forminfo.JFrameFormInfo">
   <NonVisualComponents>
+    <Component class="java.awt.Canvas" name="canvas1">
+    </Component>
     <Menu class="javax.swing.JMenuBar" name="jMenuBar1">
       <SubComponents>
         <Menu class="javax.swing.JMenu" name="jMenu1">
@@ -66,10 +68,18 @@
           <Properties>
             <Property name="text" type="java.lang.String" value="Export Excel"/>
           </Properties>
+          <Events>
+            <EventHandler event="mousePressed" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="mExportMousePressed"/>
+          </Events>
         </Menu>
         <Menu class="javax.swing.JMenu" name="mImport">
           <Properties>
             <Property name="text" type="java.lang.String" value="Import Excel"/>
+          </Properties>
+        </Menu>
+        <Menu class="javax.swing.JMenu" name="mPrint">
+          <Properties>
+            <Property name="text" type="java.lang.String" value=" Print"/>
           </Properties>
         </Menu>
         <Menu class="javax.swing.JMenu" name="mUserPermission">
@@ -139,7 +149,7 @@
                   <Component id="jPanel1" max="32767" attributes="0"/>
               </Group>
               <EmptySpace type="unrelated" max="-2" attributes="0"/>
-              <Component id="jScrollPane2" pref="425" max="32767" attributes="0"/>
+              <Component id="jScrollPane2" pref="533" max="32767" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
       </Group>

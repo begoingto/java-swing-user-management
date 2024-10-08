@@ -6,7 +6,6 @@ package app;
 
 import app.data.MenuData;
 import app.data.UserData;
-import app.models.UpdatedPermissionEnum;
 import app.models.User;
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import java.util.List;
@@ -17,19 +16,24 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.DefaultTableModel;
 import app.repositories.UserRepoitory;
-import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLaf;
-import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
-import java.awt.Button;
+import java.awt.Desktop;
 import java.awt.EventQueue;
-import java.awt.GridBagConstraints;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.tree.DefaultMutableTreeNode;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.xssf.usermodel.*;
 import raven.toast.Notifications;
 
 /**
@@ -44,6 +48,9 @@ public class AppForm extends javax.swing.JFrame {
     User user;
     private Integer userIndex;
     private Boolean isDarkTheme = true;
+    public String userHome = System.getProperty("user.home");
+    String[] columnNames = {"ID", "Username", "Full Name", "Gender", "Password", "Role", "Is Active"};
+    Map< String, Object[]> exportData;
 
     /**
      * Creates new form AppForm
@@ -55,7 +62,8 @@ public class AppForm extends javax.swing.JFrame {
 //        this.setResizable(false);
         this.setExtendedState(JFrame.MAXIMIZED_BOTH); // set full screen
         cbRole.setSelectedIndex(1);
-        String[] columnNames = {"ID", "Username", "Full Name", "Gender", "Password", "Role", "Is Active"};
+        exportData = new TreeMap< String, Object[]>();
+        exportData.put("1", columnNames);
         tblUserModel = new DefaultTableModel(columnNames, 0);
         initTableData();
         this.tblUser.setModel(tblUserModel);
@@ -64,7 +72,7 @@ public class AppForm extends javax.swing.JFrame {
         mDelete.setEnabled(false);
         mUserPermission.setEnabled(false);
         mSearch.setEnabled(false);
-        mExport.setEnabled(false);
+        mExport.setEnabled(true);
         mImport.setEnabled(false);
     }
 
@@ -77,6 +85,7 @@ public class AppForm extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        canvas1 = new java.awt.Canvas();
         jPanel1 = new javax.swing.JPanel();
         chStatus = new javax.swing.JCheckBox();
         jLabel12 = new javax.swing.JLabel();
@@ -107,6 +116,7 @@ public class AppForm extends javax.swing.JFrame {
         mSearch = new javax.swing.JMenu();
         mExport = new javax.swing.JMenu();
         mImport = new javax.swing.JMenu();
+        mPrint = new javax.swing.JMenu();
         mUserPermission = new javax.swing.JMenu();
         mTheme = new javax.swing.JMenu();
 
@@ -308,10 +318,18 @@ public class AppForm extends javax.swing.JFrame {
         jMenuBar1.add(mSearch);
 
         mExport.setText("Export Excel");
+        mExport.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                mExportMousePressed(evt);
+            }
+        });
         jMenuBar1.add(mExport);
 
         mImport.setText("Import Excel");
         jMenuBar1.add(mImport);
+
+        mPrint.setText(" Print");
+        jMenuBar1.add(mPrint);
 
         mUserPermission.setText("User Permission");
         mUserPermission.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -363,7 +381,7 @@ public class AppForm extends javax.swing.JFrame {
                     .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 160, Short.MAX_VALUE)
                     .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 425, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 533, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -572,6 +590,92 @@ public class AppForm extends javax.swing.JFrame {
 
     }//GEN-LAST:event_mThemeMouseClicked
 
+    private void mExportMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_mExportMousePressed
+        // TODO add your handling code here:
+        //make a choice for user to select a location to save
+        String documentsFile = userHome + System.getProperty("file.separator") + "Documents" + System.getProperty("file.separator") + "users.xlsx";
+        JFileChooser sPath = new JFileChooser();
+        sPath.setDialogTitle("Save Excel File");
+        sPath.setSelectedFile(new File(documentsFile));
+//
+        if (sPath.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            XSSFWorkbook wb = new XSSFWorkbook();
+//            //Create file system using specific name
+            try {
+                System.out.println(sPath.getSelectedFile());
+                XSSFSheet spreadsheet = wb.createSheet("Users");
+
+                //Create row object
+                XSSFRow row;
+
+                //This data needs to be written (Object[])
+                /**
+                 * Testing initialize Map< String, Object[]> empinfo = new
+                 * TreeMap< String, Object[]>(); empinfo.put("1", new
+                 * Object[]{"EMP ID", "EMP NAME", "DESIGNATION"});
+                 * empinfo.put("2", new Object[]{"tp01", "Gopal", "Technical
+                 * Manager"}); empinfo.put("3", new Object[]{"tp02", "Manisha",
+                 * "Proof Reader"});
+                 */
+                //Iterate over data and write to sheet
+                Set< String> keyid = exportData.keySet();
+                int rowid = 0;
+
+                for (String key : keyid) {
+                    row = spreadsheet.createRow(rowid++);
+                    Object[] objectArr = exportData.get(key);
+
+                    int cellid = 0;
+
+                    for (Object obj : objectArr) {
+                        Cell cell = row.createCell(cellid++);
+                        cell.setCellValue((String) obj);
+                    }
+                }
+
+                FileOutputStream out = new FileOutputStream(sPath.getSelectedFile());
+                wb.write(out);
+                out.close();
+
+                Notifications.getInstance().show(Notifications.Type.SUCCESS, Notifications.Location.TOP_CENTER, 5000, "You have been exported data to Path: " + sPath.getSelectedFile());
+
+                this.openExport(sPath.getSelectedFile());
+
+            } catch (IOException ex) {
+                Logger.getLogger(AppForm.class.getName()).log(Level.SEVERE, null, ex);
+                Notifications.getInstance().show(
+                        Notifications.Type.ERROR,
+                        Notifications.Location.TOP_RIGHT,
+                        5000,
+                        ex.getMessage()
+                );
+            }
+        }
+    }//GEN-LAST:event_mExportMousePressed
+
+    void openExport(File file) {
+
+        int choice = JOptionPane.showConfirmDialog(
+                null, // Parent component (null means center on screen)
+                "Do you want to open file export?", // Message to display
+                "Confirmation", // Dialog title
+                JOptionPane.YES_NO_OPTION // Option type (Yes, No, Cancel)
+        );
+
+        if (choice == 0) {
+            try {
+                Desktop.getDesktop().open(file);
+            } catch (IOException ex) {
+                Notifications.getInstance().show(
+                        Notifications.Type.ERROR,
+                        Notifications.Location.TOP_RIGHT,
+                        5000,
+                        ex.getMessage()
+                );
+            }
+        }
+    }
+
     private boolean usernameValid() {
         String regex = "^[A-Za-z][A-Za-z0-9_]{5,29}$";
         Pattern pattern = Pattern.compile(regex);
@@ -601,17 +705,35 @@ public class AppForm extends javax.swing.JFrame {
             List<User> users = UserData.list(); // Assuming UserData.list() returns a List of UserData objects
             totalUser = users.size();
             // Populate the table model with user data
-            users.forEach(user -> {
-                tblUserModel.addRow(new Object[]{
-                    user.getId(),
+            for (int i = 0; i < users.size(); i++) {
+                user = users.get(i);
+                var obj = new Object[]{
+                    user.getId().toString(),
                     user.getUsername(),
                     user.getFullName(),
                     "f".equals(user.getGender()) ? "Female" : "Male",
                     user.getPassword(),
                     user.getRole().toLowerCase(),
                     user.getStatus() ? "True" : "Fale"
-                });
-            });
+                };
+//                System.out.println("Index" + (i + 2));
+                exportData.put(String.valueOf(2 + i), obj);
+                tblUserModel.addRow(obj);
+            }
+
+//            users.forEach(user -> {
+//                Object[] obj = new Object[]{
+//                    user.getId(),
+//                    user.getUsername(),
+//                    user.getFullName(),
+//                    "f".equals(user.getGender()) ? "Female" : "Male",
+//                    user.getPassword(),
+//                    user.getRole().toLowerCase(),
+//                    user.getStatus() ? "True" : "Fale"
+//                };
+//                exportData.put("1", obj);
+//                tblUserModel.addRow(obj);
+//            });
         } catch (SQLException e) {
             Notifications.getInstance().show(
                     Notifications.Type.ERROR,
@@ -644,6 +766,7 @@ public class AppForm extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private java.awt.Canvas canvas1;
     private javax.swing.JComboBox<String> cbGender;
     private javax.swing.JComboBox<String> cbRole;
     private javax.swing.JCheckBox chStatus;
@@ -665,6 +788,7 @@ public class AppForm extends javax.swing.JFrame {
     private javax.swing.JMenu mDelete;
     private javax.swing.JMenu mExport;
     private javax.swing.JMenu mImport;
+    private javax.swing.JMenu mPrint;
     private javax.swing.JMenuItem mReset;
     private javax.swing.JMenu mSearch;
     private javax.swing.JMenu mTheme;
