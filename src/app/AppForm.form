@@ -76,6 +76,10 @@
           <Properties>
             <Property name="text" type="java.lang.String" value="Import Excel"/>
           </Properties>
+          <Events>
+            <EventHandler event="mousePressed" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="mImportMousePressed"/>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="mImportActionPerformed"/>
+          </Events>
         </Menu>
         <Menu class="javax.swing.JMenu" name="mPrint">
           <Properties>

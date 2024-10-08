@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import org.apache.poi.ss.usermodel.Cell;
@@ -73,7 +74,7 @@ public class AppForm extends javax.swing.JFrame {
         mUserPermission.setEnabled(false);
         mSearch.setEnabled(false);
         mExport.setEnabled(true);
-        mImport.setEnabled(false);
+        mImport.setEnabled(true);
     }
 
     /**
@@ -326,6 +327,16 @@ public class AppForm extends javax.swing.JFrame {
         jMenuBar1.add(mExport);
 
         mImport.setText("Import Excel");
+        mImport.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                mImportMousePressed(evt);
+            }
+        });
+        mImport.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mImportActionPerformed(evt);
+            }
+        });
         jMenuBar1.add(mImport);
 
         mPrint.setText(" Print");
@@ -652,6 +663,19 @@ public class AppForm extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_mExportMousePressed
+
+    private void mImportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mImportActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_mImportActionPerformed
+
+    private void mImportMousePressed(java.awt.event.MouseEvent evt) {
+        // TODO add your handling code here:
+        UserImportDailog frm = new UserImportDailog(null, true);
+        frm.setTitle("Import Data");
+        ImageIcon img = new ImageIcon(getClass().getResource("/app/icons/upload.png"));
+        frm.setIconImage(img.getImage());
+        frm.setVisible(true);
+    }
 
     void openExport(File file) {
 
