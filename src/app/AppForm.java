@@ -27,6 +27,7 @@ import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.itextpdf.text.Font;
+import com.itextpdf.text.pdf.PdfPCell;
 import java.awt.Desktop;
 import java.awt.EventQueue;
 import java.awt.event.WindowAdapter;
@@ -34,16 +35,22 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JTable;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.*;
 import org.icepdf.ri.common.ComponentKeyBinding;
@@ -666,7 +673,6 @@ public class AppForm extends javax.swing.JFrame {
         cellStyle.setBorderRight(BorderStyle.THIN);
         cellStyle.setAlignment(HorizontalAlignment.LEFT);
         cellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-        
 
         //Create row object
         XSSFRow row;
@@ -712,7 +718,9 @@ public class AppForm extends javax.swing.JFrame {
         Notifications.getInstance().show(Notifications.Type.INFO, Notifications.Location.TOP_CENTER, 5000, "Print processing...");
         String documentsFileExcel = userHome + System.getProperty("file.separator") + "Documents" + System.getProperty("file.separator") + "export_data.xlsx";
         String documentsPDFFile = userHome + System.getProperty("file.separator") + "Documents" + System.getProperty("file.separator") + "export_pdf.pdf";
-
+        MessageFormat header = new MessageFormat("Begoingto Users");
+        MessageFormat footer = new MessageFormat("Footer Users");
+        PrintRequestAttributeSet set = new HashPrintRequestAttributeSet();
         this.createExportPDF(documentsFileExcel, documentsPDFFile);
 
         // initiate font caching for faster startups
@@ -748,6 +756,12 @@ public class AppForm extends javax.swing.JFrame {
             public void windowClosing(WindowEvent e) {
                 System.out.println("Close document");
                 controller.closeDocument();
+                try {
+                    Files.deleteIfExists(Paths.get(documentsFileExcel));
+                    Files.deleteIfExists(Paths.get(documentsPDFFile));
+                } catch (IOException ex) {
+                    Logger.getLogger(AppForm.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         });
 
