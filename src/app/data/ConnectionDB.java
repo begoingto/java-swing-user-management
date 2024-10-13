@@ -4,9 +4,9 @@
  */
 package app.data;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import raven.toast.Notifications;
 
 /**
@@ -60,5 +60,18 @@ public class ConnectionDB {
                 System.err.println("Error closing the connection: " + e.getMessage());
             }
         }
+    }
+
+    public static List<Object> getAllTable() throws SQLException {
+        String query = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY 1 ASC;";
+        Connection conn = getConnection();
+        PreparedStatement stmt = conn.prepareStatement(query);
+        ResultSet resultSet = stmt.executeQuery();
+        List<Object> data = new ArrayList();
+        while (resultSet.next()){
+            data.add(resultSet.getString("table_name"));
+        }
+        conn.close();
+        return data;
     }
 }

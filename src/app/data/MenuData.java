@@ -117,7 +117,6 @@ public class MenuData {
             }
         }
         
-        
         private Boolean existedPermission(int userId, int menuId) {
             String sql = "SELECT COUNT(*) FROM " + tableName + " WHERE customer_id = ? AND menu_id=?;";
             try {

@@ -4,12 +4,15 @@
  */
 package app.data;
 
+import app.AppForm;
 import java.sql.*;
 import app.models.User;
 import app.services.UserService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -36,6 +39,7 @@ public class UserData {
             User customer = new User(id, username, fullName, gender, password, role, status);
             customers.add(customer);
         }
+        Logger.getLogger(AppForm.class.getName()).info("fetch user table");
         conn.close();
         return customers;
     }
@@ -56,6 +60,7 @@ public class UserData {
             u.setId(userId);
         }
         conn.close();
+        Logger.getLogger(AppForm.class.getName()).info("create user id=" + u.getId());
         return u;
     }
 
@@ -72,6 +77,7 @@ public class UserData {
         stmt.setInt(7, u.getId());
         int rowsAffected = stmt.executeUpdate();
         conn.close();
+        Logger.getLogger(AppForm.class.getName()).info("update user id=" + u.getId());
         return rowsAffected > 0;
     }
 
@@ -82,6 +88,7 @@ public class UserData {
         stmt.setInt(1, user.getId());
         int rowsAffected = stmt.executeUpdate();
         conn.close();
+        Logger.getLogger(AppForm.class.getName()).info("delete user id=" + user.getId());
         return rowsAffected > 0;
     }
 

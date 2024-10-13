@@ -4,6 +4,8 @@
  */
 package app;
 
+import app.data.ImportResponces;
+import app.data.ImportUserTable;
 import app.data.MenuData;
 import app.data.UserData;
 import app.models.User;
@@ -15,12 +17,20 @@ import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.DefaultTableModel;
-import app.repositories.UserRepoitory;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.pdf.BaseFont;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+import com.itextpdf.text.Font;
 import java.awt.Desktop;
 import java.awt.EventQueue;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -33,8 +43,14 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import org.apache.poi.ss.usermodel.Cell;
+import javax.swing.JPanel;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.*;
+import org.icepdf.ri.common.ComponentKeyBinding;
+import org.icepdf.ri.common.MyAnnotationCallback;
+import org.icepdf.ri.common.SwingController;
+import org.icepdf.ri.common.SwingViewBuilder;
+import org.icepdf.ri.util.FontPropertiesManager;
 import raven.toast.Notifications;
 
 /**
@@ -43,7 +59,6 @@ import raven.toast.Notifications;
  */
 public class AppForm extends javax.swing.JFrame {
 
-    private UserRepoitory userRepo;
     private DefaultTableModel tblUserModel;
     private Integer totalUser = 0;
     User user;
@@ -332,14 +347,14 @@ public class AppForm extends javax.swing.JFrame {
                 mImportMousePressed(evt);
             }
         });
-        mImport.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                mImportActionPerformed(evt);
-            }
-        });
         jMenuBar1.add(mImport);
 
         mPrint.setText(" Print");
+        mPrint.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                mPrintMouseClicked(evt);
+            }
+        });
         jMenuBar1.add(mPrint);
 
         mUserPermission.setText("User Permission");
@@ -421,15 +436,7 @@ public class AppForm extends javax.swing.JFrame {
             user.setStatus(this.chStatus.isSelected());
             try {
                 user = UserData.addUser(user);
-                tblUserModel.addRow(new Object[]{
-                    user.getId(),
-                    user.getUsername(),
-                    user.getFullName(),
-                    "f".equals(user.getGender()) ? "Female" : "Male",
-                    user.getPassword(),
-                    user.getRole().toLowerCase(),
-                    user.getStatus() ? "True" : "Fale"
-                });
+                this.setTableRow(user);
                 //            JOptionPane.showMessageDialog(rootPane, "You have been add user successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
                 Notifications.getInstance().show(Notifications.Type.SUCCESS, Notifications.Location.TOP_CENTER, "You have been add user successfully");
                 this.clearForm();
@@ -439,6 +446,18 @@ public class AppForm extends javax.swing.JFrame {
             }
         }
     }//GEN-LAST:event_mAddMouseClicked
+
+    private void setTableRow(User user) {
+        tblUserModel.addRow(new Object[]{
+            user.getId(),
+            user.getUsername(),
+            user.getFullName(),
+            "f".equals(user.getGender()) ? "Female" : "Male",
+            user.getPassword(),
+            user.getRole().toLowerCase(),
+            user.getStatus() ? "True" : "Fale"
+        });
+    }
 
     private void tblUserMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblUserMousePressed
         // TODO add your handling code here:
@@ -610,49 +629,17 @@ public class AppForm extends javax.swing.JFrame {
         sPath.setSelectedFile(new File(documentsFile));
 //
         if (sPath.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-            XSSFWorkbook wb = new XSSFWorkbook();
-//            //Create file system using specific name
+            //Create file system using specific name
             try {
                 System.out.println(sPath.getSelectedFile());
-                XSSFSheet spreadsheet = wb.createSheet("Users");
-
-                //Create row object
-                XSSFRow row;
-
-                //This data needs to be written (Object[])
-                /**
-                 * Testing initialize Map< String, Object[]> empinfo = new
-                 * TreeMap< String, Object[]>(); empinfo.put("1", new
-                 * Object[]{"EMP ID", "EMP NAME", "DESIGNATION"});
-                 * empinfo.put("2", new Object[]{"tp01", "Gopal", "Technical
-                 * Manager"}); empinfo.put("3", new Object[]{"tp02", "Manisha",
-                 * "Proof Reader"});
-                 */
-                //Iterate over data and write to sheet
-                Set< String> keyid = exportData.keySet();
-                int rowid = 0;
-
-                for (String key : keyid) {
-                    row = spreadsheet.createRow(rowid++);
-                    Object[] objectArr = exportData.get(key);
-
-                    int cellid = 0;
-
-                    for (Object obj : objectArr) {
-                        Cell cell = row.createCell(cellid++);
-                        cell.setCellValue((String) obj);
-                    }
-                }
-
-                FileOutputStream out = new FileOutputStream(sPath.getSelectedFile());
-                wb.write(out);
-                out.close();
 
                 Notifications.getInstance().show(Notifications.Type.SUCCESS, Notifications.Location.TOP_CENTER, 5000, "You have been exported data to Path: " + sPath.getSelectedFile());
 
+                this.exportExcelFile(sPath.getSelectedFile());
+
                 this.openExport(sPath.getSelectedFile());
 
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 Logger.getLogger(AppForm.class.getName()).log(Level.SEVERE, null, ex);
                 Notifications.getInstance().show(
                         Notifications.Type.ERROR,
@@ -662,19 +649,196 @@ public class AppForm extends javax.swing.JFrame {
                 );
             }
         }
+//            
     }//GEN-LAST:event_mExportMousePressed
 
-    private void mImportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mImportActionPerformed
+    private void exportExcelFile(File exportExcelFile) throws Exception {
+
+        XSSFWorkbook wb = new XSSFWorkbook();
+        XSSFSheet spreadsheet = wb.createSheet("Users");
+        PrintSetup printSetup = spreadsheet.getPrintSetup();
+        printSetup.setPaperSize(PrintSetup.A4_PAPERSIZE);
+
+        XSSFCellStyle cellStyle = (XSSFCellStyle) wb.createCellStyle();
+        cellStyle.setBorderBottom(BorderStyle.THIN);
+        cellStyle.setBorderTop(BorderStyle.THIN);
+        cellStyle.setBorderLeft(BorderStyle.THIN);
+        cellStyle.setBorderRight(BorderStyle.THIN);
+        cellStyle.setAlignment(HorizontalAlignment.LEFT);
+        cellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        
+
+        //Create row object
+        XSSFRow row;
+
+        //This data needs to be written (Object[])
+        /**
+         * Testing initialize Map< String, Object[]> empinfo = new
+         * TreeMap< String, Object[]>(); empinfo.put("1", new Object[]{"EMP ID",
+         * "EMP NAME", "DESIGNATION"}); empinfo.put("2", new Object[]{"tp01",
+         * "Gopal", "Technical Manager"}); empinfo.put("3", new Object[]{"tp02",
+         * "Manisha", "Proof Reader"});
+         */
+        //Iterate over data and write to sheet
+        Set< String> keyid = exportData.keySet();
+        int rowid = 0;
+
+        for (String key : keyid) {
+            row = spreadsheet.createRow(rowid++);
+            Object[] objectArr = exportData.get(key);
+            row.setHeight((short) 460);
+
+            int cellid = 0;
+
+            for (Object obj : objectArr) {
+                Cell cell = row.createCell(cellid++);
+                cell.setCellValue("" + obj);
+                cell.setCellStyle(cellStyle);
+            }
+        }
+
+        // Auto-size columns
+        for (int colNum = 0; colNum < spreadsheet.getRow(0).getLastCellNum(); colNum++) {
+            spreadsheet.autoSizeColumn(colNum);
+        }
+
+        FileOutputStream out = new FileOutputStream(exportExcelFile);
+        wb.write(out);
+        out.close();
+    }
+
+    private void mPrintMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_mPrintMouseClicked
         // TODO add your handling code here:
-    }//GEN-LAST:event_mImportActionPerformed
+        Notifications.getInstance().show(Notifications.Type.INFO, Notifications.Location.TOP_CENTER, 5000, "Print processing...");
+        String documentsFileExcel = userHome + System.getProperty("file.separator") + "Documents" + System.getProperty("file.separator") + "export_data.xlsx";
+        String documentsPDFFile = userHome + System.getProperty("file.separator") + "Documents" + System.getProperty("file.separator") + "export_pdf.pdf";
+
+        this.createExportPDF(documentsFileExcel, documentsPDFFile);
+
+        // initiate font caching for faster startups
+        FontPropertiesManager.getInstance().loadOrReadSystemFonts();
+        // build a controller
+        SwingController controller = new SwingController();
+        controller.setFullScreenMode();
+
+        // Build a SwingViewFactory configured with the controller
+        SwingViewBuilder factory = new SwingViewBuilder(controller);
+
+        // Use the factory to build a JPanel that is pre-configured
+        //with a complete, active Viewer UI.
+        JPanel viewerComponentPanel = factory.buildViewerPanel();
+        // add copy keyboard command
+        ComponentKeyBinding.install(controller, viewerComponentPanel);
+
+        // add interactive mouse link annotation support via callback
+        controller.getDocumentViewController().setAnnotationCallback(new MyAnnotationCallback(controller.getDocumentViewController()));
+
+        // Create a JFrame to display the panel in
+        JFrame window = new JFrame("Using the Viewer Component");
+        window.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        window.add(viewerComponentPanel);
+        window.pack();
+        window.setVisible(true);
+
+        // Open a PDF document to view
+        controller.openDocument(documentsPDFFile);
+
+        window.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                System.out.println("Close document");
+                controller.closeDocument();
+            }
+        });
+
+    }//GEN-LAST:event_mPrintMouseClicked
+
+    private void createExportPDF(String documentsFileExcel, String documentsPDFFile) {
+
+        File f = new File(documentsFileExcel);
+        try {
+
+            this.exportExcelFile(f);
+
+            XSSFWorkbook workbook = new XSSFWorkbook(documentsFileExcel);
+
+            // Create a new PDF document
+            Document pdfDocument = new Document();
+            PdfWriter writer = PdfWriter.getInstance(pdfDocument, new FileOutputStream(documentsPDFFile));
+
+            // Open the PDF document
+            pdfDocument.open();
+
+            // Get the first sheet
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Create a PdfPTable
+            PdfPTable table = new PdfPTable(sheet.getRow(0).getLastCellNum());
+
+            // Create a Unicode font
+            String fontPath = userHome + System.getProperty("file.separator") + ".fonts" + System.getProperty("file.separator") + "KantumruyPro-Regular.ttf";
+            BaseFont baseFont = BaseFont.createFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
+            Font font = new Font(baseFont, 14);
+
+            // Iterate through rows and cells
+            for (Row row : sheet) {
+                for (Cell cell : row) {
+                    switch (cell.getCellType()) {
+                        case STRING:
+                            table.addCell(new Paragraph(cell.getStringCellValue(), font));
+                            break;
+                        case NUMERIC:
+                            table.addCell(new Paragraph(String.valueOf(cell.getNumericCellValue())));
+                            break;
+                        case BOOLEAN:
+                            table.addCell(new Paragraph(Boolean.toString(cell.getBooleanCellValue())));
+                            break;
+                        case FORMULA:
+                            table.addCell(new Paragraph(cell.getCellFormula()));
+                            break;
+                        case BLANK:
+                            table.addCell(new Phrase(""));
+                            break;
+                        default:
+                            table.addCell(new Paragraph("Unknown cell type"));
+                    }
+                }
+            }
+
+            // Add the table to the PDF document
+            pdfDocument.add(table);
+
+            // Close the document
+            pdfDocument.close();
+
+            // Close the workbook
+            workbook.close();
+
+        } catch (Exception ex) {
+            Logger.getLogger(AppForm.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 
     private void mImportMousePressed(java.awt.event.MouseEvent evt) {
         // TODO add your handling code here:
+//        LoadingJDialog loading = new LoadingJDialog(null, true);
+//        loading.setVisible(true);
         UserImportDailog frm = new UserImportDailog(null, true);
         frm.setTitle("Import Data");
         ImageIcon img = new ImageIcon(getClass().getResource("/app/icons/upload.png"));
         frm.setIconImage(img.getImage());
         frm.setVisible(true);
+        int returnVal = frm.getReturnStatus();
+        ImportUserTable p = new ImportUserTable(frm.ItemData, frm.tableName);
+        p.setAutCommitTrue();
+        if (returnVal == 1) {
+            Notifications.getInstance().show(Notifications.Type.INFO, Notifications.Location.TOP_CENTER, 5000, "Import processing...");
+            ImportResponces<User> res = p.addDataToTable();
+            Notifications.getInstance().show(Notifications.Type.SUCCESS, Notifications.Location.TOP_CENTER, 5000, "Okay import data Success=" + res.totalSuccess() + " and Fail=" + res.totalFail());
+            res.data().forEach(user -> this.setTableRow(user));
+        } else {
+            Notifications.getInstance().show(Notifications.Type.WARNING, Notifications.Location.TOP_CENTER, "Cancelled");
+        }
     }
 
     void openExport(File file) {

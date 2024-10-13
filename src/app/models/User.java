@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
+
     private Integer id;
     private String username;
     private String fullName;
@@ -24,6 +25,15 @@ public class User {
     private String role;
     private Boolean status;
 
+    public User(String username, String fullName, String gender, String password, String role, Boolean status) {
+        this.username = username;
+        this.fullName = fullName;
+        this.gender = gender;
+        this.password = password;
+        this.role = role;
+        this.status = status;
+    }
+
     public void setUsername(String username) {
         this.username = username.toLowerCase();
     }
@@ -31,5 +41,5 @@ public class User {
     public String getUsername() {
         return username.toLowerCase();
     }
-    
+
 }

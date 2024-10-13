@@ -10,7 +10,6 @@ import app.models.User;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,7 +36,6 @@ public class FrmUserPermission extends javax.swing.JDialog {
 
     private User user;
     private DefaultTableModel tblPermissionModel;
-    private List<Integer> userPermission;
     private MenuData.UpdatingPermission updatingPermission;
     /**
      * A return status code - returned if Cancel button has been pressed

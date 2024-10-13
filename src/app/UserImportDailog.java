@@ -4,21 +4,27 @@
  */
 package app;
 
+import app.data.ConnectionDB;
+import app.models.User;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.DefaultTableModel;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -40,13 +46,20 @@ public class UserImportDailog extends javax.swing.JDialog {
      */
     public static final int RET_OK = 1;
 
+    private DefaultTableModel tblModel;
+
+    public List<Object> ItemData;
+
+    public String tableName;
+
     /**
      * Creates new form NewOkCancelDialog
      */
     public UserImportDailog(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
-
+        this.ItemData = new ArrayList<>();
+        tblShowData.setFocusable(false);
         pShowImportData.setVisible(false);
 
         // Close the dialog when Esc is pressed
@@ -85,6 +98,8 @@ public class UserImportDailog extends javax.swing.JDialog {
         pShowImportData = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         tblShowData = new javax.swing.JTable();
+        jLabel14 = new javax.swing.JLabel();
+        cbSelectTable = new javax.swing.JComboBox<>();
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
@@ -146,24 +161,43 @@ public class UserImportDailog extends javax.swing.JDialog {
         ));
         jScrollPane1.setViewportView(tblShowData);
 
+        jLabel14.setText("Select Table");
+
+        cbSelectTable.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "list_table" }));
+        cbSelectTable.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                cbSelectTableItemStateChanged(evt);
+            }
+        });
+
         javax.swing.GroupLayout pShowImportDataLayout = new javax.swing.GroupLayout(pShowImportData);
         pShowImportData.setLayout(pShowImportDataLayout);
         pShowImportDataLayout.setHorizontalGroup(
             pShowImportDataLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(pShowImportDataLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1)
+                .addGroup(pShowImportDataLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 918, Short.MAX_VALUE)
+                    .addGroup(pShowImportDataLayout.createSequentialGroup()
+                        .addComponent(jLabel14)
+                        .addGap(18, 18, 18)
+                        .addComponent(cbSelectTable, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(567, 567, 567)))
                 .addContainerGap())
         );
         pShowImportDataLayout.setVerticalGroup(
             pShowImportDataLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(pShowImportDataLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 599, Short.MAX_VALUE)
-                .addContainerGap())
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 537, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(19, 19, 19)
+                .addGroup(pShowImportDataLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel14)
+                    .addComponent(cbSelectTable, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(19, Short.MAX_VALUE))
         );
 
-        jLayeredPane1.setLayer(pBrowseFile, javax.swing.JLayeredPane.PALETTE_LAYER);
+        jLayeredPane1.setLayer(pBrowseFile, javax.swing.JLayeredPane.DEFAULT_LAYER);
         jLayeredPane1.setLayer(pShowImportData, javax.swing.JLayeredPane.PALETTE_LAYER);
 
         javax.swing.GroupLayout jLayeredPane1Layout = new javax.swing.GroupLayout(jLayeredPane1);
@@ -270,29 +304,45 @@ public class UserImportDailog extends javax.swing.JDialog {
 
                 XSSFRow row;
 
+                List<List> data = new ArrayList<>();
+
                 while (rowIterator.hasNext()) {
                     row = (XSSFRow) rowIterator.next();
                     Iterator< Cell> cellIterator = row.cellIterator();
-                    System.out.println("row:"+ row);
-                    q
+                    List<Object> record = new ArrayList<>();
+
                     while (cellIterator.hasNext()) {
                         Cell cell = cellIterator.next();
 
                         switch (cell.getCellType()) {
                             case NUMERIC:
-                                System.out.println("Header");
-                                System.out.print(cell.getNumericCellValue() + " \t\t ");
+                                record.add(cell.getNumericCellValue());
                                 break;
 
                             case STRING:
-                                System.out.print(
-                                        cell.getStringCellValue() + " \t\t ");
+                                record.add(cell.getStringCellValue());
                                 break;
                         }
                     }
-                    System.out.println();
+
+                    data.add(record);
+
                 }
                 fileUpload.close();
+
+                // Set Select Table Dropdown
+                List<Object> tables = ConnectionDB.getAllTable();
+                DefaultComboBoxModel bmModel = new DefaultComboBoxModel<>(tables.toArray());
+                this.tableName = String.valueOf(tables.get(0));
+                cbSelectTable.setModel(bmModel);
+
+                // Write data to table
+                tblModel = new DefaultTableModel(data.get(0).toArray(), 0);
+                data.remove(0);
+                data.forEach(item -> tblModel.addRow(item.toArray()));
+                this.ItemData.addAll(data);
+
+                this.tblShowData.setModel(tblModel);
 
             } catch (Exception ex) {
                 Logger.getLogger(UserImportDailog.class.getName()).log(Level.SEVERE, null, ex);
@@ -300,6 +350,11 @@ public class UserImportDailog extends javax.swing.JDialog {
 
         }
     }//GEN-LAST:event_btnBrowseFileActionPerformed
+
+    private void cbSelectTableItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbSelectTableItemStateChanged
+        // TODO add your handling code here:
+        this.tableName = String.valueOf(cbSelectTable.getSelectedItem());
+    }//GEN-LAST:event_cbSelectTableItemStateChanged
 
     private void doClose(int retStatus) {
         returnStatus = retStatus;
@@ -353,6 +408,8 @@ public class UserImportDailog extends javax.swing.JDialog {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnBrowseFile;
     private javax.swing.JButton cancelButton;
+    private javax.swing.JComboBox<String> cbSelectTable;
+    private javax.swing.JLabel jLabel14;
     private javax.swing.JLayeredPane jLayeredPane1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JButton okButton;
